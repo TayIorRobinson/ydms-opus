@@ -73,3 +73,36 @@ jobs:
         with:
           name: opus-windows
           path: ${{ steps.buildoutput.outputs.build-output-dir }}/**/*.dll
+
+  Build-macOS:
+    name: Builds Opus for macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install autoconf automake libtool
+
+      - name: Download models
+        run: ./autogen.sh
+
+      - name: Create build directory
+        run: mkdir build
+
+      - name: Create build out variable
+        id: buildoutput
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Configure CMake
+        working-directory: ${{ steps.buildoutput.outputs.build-output-dir }}
+        run: cmake .. -DBUILD_SHARED_LIBS=ON
+
+      - name: Build Opus for macOS
+        working-directory: ${{ steps.buildoutput.outputs.build-output-dir }}
+        run: cmake --build . --config Release --target package
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-macos-arm
+          path: ${{ steps.buildoutput.outputs.build-output-dir }}/*.dylib
